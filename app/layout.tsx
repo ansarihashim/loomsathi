@@ -12,7 +12,13 @@ export const metadata: Metadata = {
   description: 'Empowering Malegaon\'s textile and powerloom industry with digital solutions for better management, efficiency, and growth.',
   keywords: 'textile, powerloom, Malegaon, digital solutions, loom management, textile industry',
   authors: [{ name: 'LoomSathi Team' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 function ProgressBarWrapper() {

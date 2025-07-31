@@ -36,6 +36,7 @@ interface FormErrors {
   name?: string
   email?: string
   phone?: string
+  general?: string
 }
 
 const PersonalInformation = ({ user, onUserUpdate }: PersonalInformationProps) => {

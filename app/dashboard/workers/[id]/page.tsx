@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { 
   ArrowLeft,
@@ -66,11 +66,7 @@ const WorkerDetailPage = () => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  useEffect(() => {
-    fetchWorkerDetails()
-  }, [workerId])
-
-  const fetchWorkerDetails = async () => {
+  const fetchWorkerDetails = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers/${workerId}`, {
         headers: {
@@ -92,7 +88,11 @@ const WorkerDetailPage = () => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [workerId])
+
+  useEffect(() => {
+    fetchWorkerDetails()
+  }, [fetchWorkerDetails])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {

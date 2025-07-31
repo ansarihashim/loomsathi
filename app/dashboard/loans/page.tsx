@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Plus, 
@@ -98,22 +98,7 @@ const LoanDashboard = () => {
   // Add local state for raw date input
   const [rawLoanDate, setRawLoanDate] = useState('')
 
-  useEffect(() => {
-    fetchLoans()
-    fetchWorkers()
-  }, [])
-
-  useEffect(() => {
-    // Filter loans based on search term
-    const filtered = loans.filter(loan => 
-      getWorkerName(loan).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (loan.loan_amt || 0).toString().includes(searchTerm) ||
-      formatDate(loan.loan_date).includes(searchTerm)
-    )
-    setFilteredLoans(filtered)
-  }, [searchTerm, loans])
-
-  const fetchLoans = async () => {
+  const fetchLoans = useCallback(async () => {
     try {
       startLoading('Fetching loan data...')
       
@@ -129,123 +114,22 @@ const LoanDashboard = () => {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Error response:', errorText)
-        throw new Error('Failed to fetch loans')
+        throw new Error(`Failed to fetch loan data: ${response.status} ${response.statusText}`)
       }
       
       const data = await response.json()
-      console.log('Loans data received:', data)
-      
-      // Handle the grouped loan structure from backend
-      if (data.success && data.data) {
-        const processedLoans: Loan[] = []
-        
-        // Process each worker group
-        for (const workerGroup of data.data) {
-          if (workerGroup.loans && Array.isArray(workerGroup.loans)) {
-            for (const loan of workerGroup.loans) {
-                             // Fetch installment data for this specific loan
-               const installmentResponse = await fetch(
-                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/loans/worker/${workerGroup.worker_id}`,
-                 {
-                   headers: {
-                     'Authorization': `Bearer ${token}`,
-                     'Content-Type': 'application/json'
-                   }
-                 }
-               )
-               
-               let paid_amount = 0
-               let remaining_amount = loan.loan_amt || 0
-               
-               if (installmentResponse.ok) {
-                 const installmentData = await installmentResponse.json()
-                 console.log(`Installment data for worker ${workerGroup.worker_id}:`, installmentData)
-                 
-                 if (installmentData.success && installmentData.data) {
-                   console.log(`Installment data for worker ${workerGroup.worker_id}:`, installmentData.data)
-                   
-                   // Find the specific loan in the installment data
-                   const loanInstallments = installmentData.data.find((item: any) => 
-                     String(item.loan_id) === String(loan.loan_id)
-                   )
-                   console.log(`Looking for loan_id: ${loan.loan_id} in installment data:`, installmentData.data.map((item: any) => ({ loan_id: item.loan_id, paid_amt: item.paid_amt, remaining_amt: item.remaining_amt })))
-                   console.log(`Found loan installments for loan ${loan.loan_id}:`, loanInstallments)
-                   
-                   if (loanInstallments) {
-                     paid_amount = loanInstallments.paid_amt || 0
-                     remaining_amount = loanInstallments.remaining_amt || (loan.loan_amt || 0)
-                     console.log(`Loan ${loan.loan_id}: paid=${paid_amount}, remaining=${remaining_amount}`)
-                   } else {
-                     // If no installments found, remaining amount is full loan amount
-                     remaining_amount = loan.loan_amt || 0
-                     console.log(`No installments found for loan ${loan.loan_id}, remaining=${remaining_amount}`)
-                   }
-                 }
-                              } else {
-                 console.log(`Failed to fetch installments for worker ${workerGroup.worker_id}`)
-               }
-               
-               // Fallback: Try to get worker data directly if installment data failed
-               if (paid_amount === 0 && remaining_amount === loan.loan_amt) {
-                 try {
-                   const workerResponse = await fetch(
-                     `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers/${workerGroup.worker_id}`,
-                     {
-                       headers: {
-                         'Authorization': `Bearer ${token}`,
-                         'Content-Type': 'application/json'
-                       }
-                     }
-                   )
-                   
-                   if (workerResponse.ok) {
-                     const workerData = await workerResponse.json()
-                     console.log(`Worker data for ${workerGroup.worker_id}:`, workerData)
-                     
-                     if (workerData.success && workerData.data) {
-                       const worker = workerData.data
-                       // Use worker's paid_amt and remaining_amt as fallback
-                       paid_amount = worker.paid_amt || 0
-                       remaining_amount = worker.remaining_amt || (loan.loan_amt || 0)
-                       console.log(`Using worker data fallback: paid=${paid_amount}, remaining=${remaining_amount}`)
-                     }
-                   }
-                 } catch (error) {
-                   console.log(`Failed to fetch worker data for ${workerGroup.worker_id}:`, error)
-                 }
-               }
-               
-               processedLoans.push({
-                _id: loan.loan_id || '',
-                worker_id: workerGroup.worker_id || '',
-                worker_name: workerGroup.worker_name || 'Unknown Worker',
-                loan_amt: loan.loan_amt || 0,
-                loan_date: loan.loan_date || new Date(),
-                status: remaining_amount > 0 ? 'active' : 'paid',
-                remaining_amount: remaining_amount,
-                paid_amount: paid_amount,
-                createdAt: loan.loan_date || new Date(),
-                updatedAt: loan.loan_date || new Date()
-              })
-            }
-          }
-        }
-        
-        console.log('Processed loans with installments:', processedLoans)
-        setLoans(processedLoans)
-      } else {
-        setLoans([])
-      }
-    } catch (error) {
+      setLoans(data.data || [])
+      setFilteredLoans(data.data || [])
+    } catch (error: any) {
       console.error('Error fetching loans:', error)
-      setError('Failed to load loans. Please try again.')
+      setError(`Failed to fetch loan data: ${error.message}`)
     } finally {
-      setIsLoading(false)
       stopLoading()
+      setIsLoading(false)
     }
-  }
+  }, [startLoading, stopLoading])
 
-  const fetchWorkers = async () => {
+  const fetchWorkers = useCallback(async () => {
     try {
       const token = localStorage.getItem('loomsathi_token')
       
@@ -256,14 +140,31 @@ const LoanDashboard = () => {
         }
       })
       
-      if (response.ok) {
-        const data = await response.json()
-        setWorkers(data.data || [])
+      if (!response.ok) {
+        throw new Error(`Failed to fetch workers: ${response.status}`)
       }
-    } catch (error) {
+      
+      const data = await response.json()
+      setWorkers(data.data || [])
+    } catch (error: any) {
       console.error('Error fetching workers:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchLoans()
+    fetchWorkers()
+  }, [fetchLoans, fetchWorkers])
+
+  useEffect(() => {
+    // Filter loans based on search term
+    const filtered = loans.filter(loan => 
+      getWorkerName(loan).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (loan.loan_amt || 0).toString().includes(searchTerm) ||
+      formatDate(loan.loan_date).includes(searchTerm)
+    )
+    setFilteredLoans(filtered)
+  }, [searchTerm, loans])
 
   const handleCreate = () => {
     setSelectedLoan(null)

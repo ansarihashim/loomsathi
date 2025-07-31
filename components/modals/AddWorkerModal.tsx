@@ -168,7 +168,11 @@ const AddWorkerModal = ({ isOpen, onClose, onWorkerAdded }: AddWorkerModalProps)
       }
     `
     document.head.appendChild(style)
-    return () => document.head.removeChild(style)
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style)
+      }
+    }
   }, [])
 
   const validateForm = () => {

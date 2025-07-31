@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Plus, 
@@ -69,20 +69,7 @@ const BaanaDashboard = () => {
   const [rawWeekStart, setRawWeekStart] = useState('');
   const [rawWeekEnd, setRawWeekEnd] = useState('');
 
-  useEffect(() => {
-    fetchBaanas()
-  }, [])
-
-  useEffect(() => {
-    // Filter baanas based on search term
-    const filtered = baanas.filter(baana => 
-      baana.baana_arrived.toString().includes(searchTerm) ||
-      formatDate(baana.baana_arrival_date).includes(searchTerm)
-    )
-    setFilteredBaanas(filtered)
-  }, [searchTerm, baanas])
-
-  const fetchBaanas = async () => {
+  const fetchBaanas = useCallback(async () => {
     try {
       startLoading('Fetching baana data...')
       
@@ -111,7 +98,20 @@ const BaanaDashboard = () => {
       stopLoading()
       setIsLoading(false)
     }
-  }
+  }, [startLoading, stopLoading])
+
+  useEffect(() => {
+    fetchBaanas()
+  }, [fetchBaanas])
+
+  useEffect(() => {
+    // Filter baanas based on search term
+    const filtered = baanas.filter(baana => 
+      baana.baana_arrived.toString().includes(searchTerm) ||
+      formatDate(baana.baana_arrival_date).includes(searchTerm)
+    )
+    setFilteredBaanas(filtered)
+  }, [searchTerm, baanas])
 
   const handleCreate = () => {
     setFormData({

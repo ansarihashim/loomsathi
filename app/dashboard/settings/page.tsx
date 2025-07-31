@@ -105,15 +105,10 @@ const SettingsPage = () => {
     }
   }, [router])
 
-  // Close sidebar when clicking on navigation items
+  // Handle navigation click
   const handleNavigationClick = () => {
-    setIsSidebarOpen(false)
+    // Navigation click handler - can be extended for future functionality
   }
-
-  // Handle overlay click to close sidebar
-
-
-  // Toggle sidebar function
 
 
   if (isLoading) {

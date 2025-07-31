@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Plus, 
@@ -69,20 +69,7 @@ const BeamDashboard = () => {
   const [rawWeekStart, setRawWeekStart] = useState('');
   const [rawWeekEnd, setRawWeekEnd] = useState('');
 
-  useEffect(() => {
-    fetchBeams()
-  }, [])
-
-  useEffect(() => {
-    // Filter beams based on search term
-    const filtered = beams.filter(beam => 
-      beam.beams_arrived.toString().includes(searchTerm) ||
-      formatDate(beam.beam_arrival_date).includes(searchTerm)
-    )
-    setFilteredBeams(filtered)
-  }, [searchTerm, beams])
-
-  const fetchBeams = async () => {
+  const fetchBeams = useCallback(async () => {
     try {
       startLoading('Fetching beam data...')
       
@@ -105,13 +92,26 @@ const BeamDashboard = () => {
       setBeams(data.data || [])
       setFilteredBeams(data.data || [])
     } catch (error: any) {
-      console.error('Error fetching beams:', error)
+      console.error('Error fetching beam:', error)
       setError(`Failed to fetch beam data: ${error.message}`)
     } finally {
       stopLoading()
       setIsLoading(false)
     }
-  }
+  }, [startLoading, stopLoading])
+
+  useEffect(() => {
+    fetchBeams()
+  }, [fetchBeams])
+
+  useEffect(() => {
+    // Filter beams based on search term
+    const filtered = beams.filter(beam => 
+      beam.beams_arrived.toString().includes(searchTerm) ||
+      formatDate(beam.beam_arrival_date).includes(searchTerm)
+    )
+    setFilteredBeams(filtered)
+  }, [searchTerm, beams])
 
   const handleCreate = () => {
     setFormData({

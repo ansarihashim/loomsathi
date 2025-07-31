@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Plus, 
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import AuthGuard from '@/components/auth/AuthGuard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useApiLoaderContext } from '@/contexts/ApiLoaderContext'
@@ -44,9 +45,36 @@ interface ExpenseFormData {
   expense_date: string
 }
 
+// Component to handle search params with Suspense
+const SearchParamsHandler = ({ 
+  isLoading, 
+  handleCreate, 
+  router 
+}: { 
+  isLoading: boolean
+  handleCreate: () => void
+  router: any
+}) => {
+  const searchParams = useSearchParams()
+  
+  useEffect(() => {
+    const action = searchParams.get('action')
+    if (action === 'create' && !isLoading) {
+      // Small delay to ensure page is fully loaded
+      const timer = setTimeout(() => {
+        handleCreate()
+        // Clean up the URL parameter
+        router.replace('/dashboard/expenses', { scroll: false })
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams, isLoading, router, handleCreate])
+  
+  return null
+}
+
 const ExpenseDashboard = () => {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>([])
@@ -72,38 +100,14 @@ const ExpenseDashboard = () => {
   // Add local state for raw date input
   const [rawExpenseDate, setRawExpenseDate] = useState('')
 
-  useEffect(() => {
-    fetchExpenses()
-  }, [])
-
-  // Check for URL parameter to auto-open create modal
-  useEffect(() => {
-    const action = searchParams.get('action')
-    if (action === 'create' && !isLoading) {
-      // Small delay to ensure page is fully loaded
-      const timer = setTimeout(() => {
-        handleCreate()
-        // Clean up the URL parameter
-        router.replace('/dashboard/expenses', { scroll: false })
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [searchParams, isLoading, router])
-
-  useEffect(() => {
-    // Filter expenses based on search term
-    const filtered = expenses.filter(expense => 
-      (expense.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (expense.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (expense.amount || 0).toString().includes(searchTerm) ||
-      formatDate(expense.expense_date).includes(searchTerm)
-    )
-    setFilteredExpenses(filtered)
-  }, [searchTerm, expenses])
-
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     try {
       startLoading('Fetching expense data...')
+      
+      // Check if we're on the client side
+      if (typeof window === 'undefined') {
+        return
+      }
       
       const token = localStorage.getItem('loomsathi_token')
       
@@ -117,47 +121,40 @@ const ExpenseDashboard = () => {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Error response:', errorText)
-        throw new Error('Failed to fetch expenses')
+        throw new Error(`Failed to fetch expense data: ${response.status} ${response.statusText}`)
       }
       
       const data = await response.json()
-      console.log('Expenses data received:', data)
-      console.log('Data structure:', JSON.stringify(data, null, 2))
-      
-      if (data.success && data.data) {
-        // Filter out expenses with invalid data and process valid ones
-        const processedExpenses = data.data
-          .filter((expense: any) => 
-            expense.title && 
-            expense.title.trim() !== '' && 
-            expense.amount && 
-            expense.amount > 0 && 
-            expense.category && 
-            expense.category.trim() !== ''
-          )
-          .map((expense: any) => ({
-            _id: expense._id || '',
-            title: expense.title,
-            amount: expense.amount,
-            category: expense.category,
-            description: expense.description || '',
-            expense_date: expense.expense_date || new Date(),
-            createdAt: expense.createdAt || new Date(),
-            updatedAt: expense.updatedAt || new Date()
-          }))
-        console.log('Processed expenses:', processedExpenses)
-        setExpenses(processedExpenses)
-      } else {
-        setExpenses([])
-      }
-    } catch (error) {
+      setExpenses(data.data || [])
+      setFilteredExpenses(data.data || [])
+    } catch (error: any) {
       console.error('Error fetching expenses:', error)
-      setError('Failed to load expenses. Please try again.')
+      setError(`Failed to fetch expense data: ${error.message}`)
     } finally {
-      setIsLoading(false)
       stopLoading()
+      setIsLoading(false)
     }
-  }
+  }, [startLoading, stopLoading])
+
+  useEffect(() => {
+    fetchExpenses()
+  }, [fetchExpenses])
+
+  // Check for URL parameter to auto-open create modal
+  useEffect(() => {
+    // This will be handled by the SearchParamsHandler component
+  }, [])
+
+  useEffect(() => {
+    // Filter expenses based on search term
+    const filtered = expenses.filter(expense => 
+      (expense.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (expense.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (expense.amount || 0).toString().includes(searchTerm) ||
+      formatDate(expense.expense_date).includes(searchTerm)
+    )
+    setFilteredExpenses(filtered)
+  }, [searchTerm, expenses])
 
   const handleCreate = () => {
     setSelectedExpense(null)
@@ -325,6 +322,13 @@ const ExpenseDashboard = () => {
 
   return (
     <AuthGuard>
+      <Suspense fallback={null}>
+        <SearchParamsHandler 
+          isLoading={isLoading}
+          handleCreate={handleCreate}
+          router={router}
+        />
+      </Suspense>
       <motion.div 
         className="min-h-screen bg-gray-50"
         initial={{ opacity: 0, y: 20 }}
