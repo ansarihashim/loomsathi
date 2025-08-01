@@ -23,7 +23,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 
       try {
         // Verify token with backend
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/me`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

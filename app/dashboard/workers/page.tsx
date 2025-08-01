@@ -92,7 +92,7 @@ const WorkersPage = () => {
 
   const fetchWorkers = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
         }
@@ -170,7 +170,7 @@ const WorkersPage = () => {
     if (!selectedWorker) return
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers/${selectedWorker._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/${selectedWorker._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`

@@ -239,7 +239,7 @@ const AddWorkerModal = ({ isOpen, onClose, onWorkerAdded }: AddWorkerModalProps)
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

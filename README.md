@@ -229,13 +229,13 @@ API_BASE_URL=http://localhost:5000
 ```
 
 ### API Endpoints
-- **Authentication**: `/api/v1/auth/*`
-- **Workers**: `/api/v1/workers/*`
-- **Loans**: `/api/v1/loans/*`
-- **Expenses**: `/api/v1/expenses/*`
-- **Baanas**: `/api/v1/baanas/*`
-- **Beams**: `/api/v1/beams/*`
-- **Dashboard**: `/api/v1/dashboard/*`
+- **Authentication**: `/auth/*`
+- **Workers**: `/workers/*`
+- **Loans**: `/loans/*`
+- **Expenses**: `/expenses/*`
+- **Baanas**: `/baanas/*`
+- **Beams**: `/beams/*`
+- **Dashboard**: `/dashboard/*`
 
 ### Error Handling
 - Network error detection

@@ -140,7 +140,7 @@ const PersonalInformation = ({ user, onUserUpdate }: PersonalInformationProps) =
       }
 
       // Check if API endpoint exists by making a test request
-      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/update-profile`, {
+      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/update-profile`, {
         method: 'OPTIONS',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -168,7 +168,7 @@ const PersonalInformation = ({ user, onUserUpdate }: PersonalInformationProps) =
         return
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/update-profile`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/update-profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

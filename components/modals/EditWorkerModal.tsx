@@ -235,7 +235,7 @@ const EditWorkerModal = ({ isOpen, onClose, worker, onUpdate }: EditWorkerModalP
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers/${worker?._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/${worker?._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

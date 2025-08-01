@@ -75,7 +75,7 @@ const BaanaDashboard = () => {
       
       const token = localStorage.getItem('loomsathi_token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/baanas`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/baanas`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -159,8 +159,8 @@ const BaanaDashboard = () => {
 
     try {
       const url = selectedBaana 
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/baanas/${selectedBaana._id}`
-        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/baanas`
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/baanas/${selectedBaana._id}`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/baanas`
       
       const method = selectedBaana ? 'PUT' : 'POST'
       
@@ -210,7 +210,7 @@ const BaanaDashboard = () => {
 
     try {
       startLoading('Deleting baana...')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/baanas/${selectedBaana._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/baanas/${selectedBaana._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`

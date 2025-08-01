@@ -75,7 +75,7 @@ const BeamDashboard = () => {
       
       const token = localStorage.getItem('loomsathi_token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/beams`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/beams`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -159,8 +159,8 @@ const BeamDashboard = () => {
 
     try {
       const url = selectedBeam 
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/beams/${selectedBeam._id}`
-        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/beams`
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/beams/${selectedBeam._id}`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/beams`
       
       const method = selectedBeam ? 'PUT' : 'POST'
       
@@ -210,7 +210,7 @@ const BeamDashboard = () => {
 
     try {
       startLoading('Deleting beam...')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/beams/${selectedBeam._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/beams/${selectedBeam._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`

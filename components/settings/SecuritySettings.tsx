@@ -103,7 +103,7 @@ const SecuritySettings = ({ user }: SecuritySettingsProps) => {
       }
 
       // Check if API endpoint exists
-      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/change-password`, {
+      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/change-password`, {
         method: 'OPTIONS',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -118,7 +118,7 @@ const SecuritySettings = ({ user }: SecuritySettingsProps) => {
         return
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/change-password`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/change-password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ const SecuritySettings = ({ user }: SecuritySettingsProps) => {
       }
 
       // Check if API endpoint exists
-      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/toggle-2fa`, {
+      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/toggle-2fa`, {
         method: 'OPTIONS',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -179,7 +179,7 @@ const SecuritySettings = ({ user }: SecuritySettingsProps) => {
         return
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/toggle-2fa`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/toggle-2fa`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

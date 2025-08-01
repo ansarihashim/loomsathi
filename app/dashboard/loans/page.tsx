@@ -104,7 +104,7 @@ const LoanDashboard = () => {
       
       const token = localStorage.getItem('loomsathi_token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/loans`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/loans`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -133,7 +133,7 @@ const LoanDashboard = () => {
     try {
       const token = localStorage.getItem('loomsathi_token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -213,8 +213,8 @@ const LoanDashboard = () => {
     try {
       const token = localStorage.getItem('loomsathi_token')
       const url = selectedLoan 
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/loans/${selectedLoan._id}`
-        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/loans`
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/loans/${selectedLoan._id}`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/loans`
       
       const response = await fetch(url, {
         method: selectedLoan ? 'PUT' : 'POST',
@@ -252,7 +252,7 @@ const LoanDashboard = () => {
     try {
       const token = localStorage.getItem('loomsathi_token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/loans/${selectedLoan._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/loans/${selectedLoan._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -323,7 +323,7 @@ const LoanDashboard = () => {
       
       console.log('Sending payment data:', paymentData)
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/installments`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/installments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -154,22 +154,22 @@ const Dashboard = () => {
 
       // Fetch stats and activities with loading indicators
       const [statsData, activitiesData, beamActivitiesData, baanaActivitiesData] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/dashboard/stats`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/stats`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
           }
         }).then(res => res.ok ? res.json() : null),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/dashboard/activities`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/activities`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
           }
         }).then(res => res.ok ? res.json() : null),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/dashboard/beam-activities`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/beam-activities`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
           }
         }).then(res => res.ok ? res.json() : null),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/dashboard/baana-activities`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/baana-activities`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
           }

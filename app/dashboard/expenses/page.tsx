@@ -111,7 +111,7 @@ const ExpenseDashboard = () => {
       
       const token = localStorage.getItem('loomsathi_token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/expenses`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -214,8 +214,8 @@ const ExpenseDashboard = () => {
     try {
       const token = localStorage.getItem('loomsathi_token')
       const url = selectedExpense 
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/expenses/${selectedExpense._id}`
-        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/expenses`
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses/${selectedExpense._id}`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses`
       
       const response = await fetch(url, {
         method: selectedExpense ? 'PUT' : 'POST',
@@ -253,7 +253,7 @@ const ExpenseDashboard = () => {
     try {
       const token = localStorage.getItem('loomsathi_token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/expenses/${selectedExpense._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses/${selectedExpense._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -287,7 +287,7 @@ const ExpenseDashboard = () => {
       
       const token = localStorage.getItem('loomsathi_token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/expenses/cleanup`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses/cleanup`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

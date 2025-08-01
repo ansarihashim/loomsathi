@@ -68,7 +68,7 @@ const WorkerDetailPage = () => {
 
   const fetchWorkerDetails = useCallback(async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers/${workerId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/${workerId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
         }
@@ -123,7 +123,7 @@ const WorkerDetailPage = () => {
 
   const handleWorkerDelete = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/workers/${workerId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/${workerId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
