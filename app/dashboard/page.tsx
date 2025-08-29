@@ -164,12 +164,12 @@ const Dashboard = () => {
             'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
           }
         }).then(res => res.ok ? res.json() : null),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/beam-activities`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/recent-beam`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
           }
         }).then(res => res.ok ? res.json() : null),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/baana-activities`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/recent-baana`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
           }

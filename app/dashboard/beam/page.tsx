@@ -59,7 +59,7 @@ const BeamDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const { startLoading, stopLoading } = useApiLoaderContext()
-  const { navigateWithLoader } = useNavigationLoader({
+  const { navigateWithLoader, fetchWithLoader } = useNavigationLoader({
     showOnNavigation: true,
     defaultMessage: 'Loading...'
   })
@@ -71,34 +71,31 @@ const BeamDashboard = () => {
 
   const fetchBeams = useCallback(async () => {
     try {
-      startLoading('Fetching beam data...')
-      
-      const token = localStorage.getItem('loomsathi_token')
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/beams`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const data = await fetchWithLoader(async () => {
+        const token = localStorage.getItem('loomsathi_token')
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/beams`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Error response:', errorText)
+          throw new Error(`Failed to fetch beam data: ${response.status} ${response.statusText}`)
         }
-      })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error response:', errorText)
-        throw new Error(`Failed to fetch beam data: ${response.status} ${response.statusText}`)
-      }
-      
-      const data = await response.json()
+        return response.json()
+      }, 'Fetching beam data...')
+
       setBeams(data.data || [])
       setFilteredBeams(data.data || [])
     } catch (error: any) {
       console.error('Error fetching beam:', error)
       setError(`Failed to fetch beam data: ${error.message}`)
     } finally {
-      stopLoading()
       setIsLoading(false)
     }
-  }, [startLoading, stopLoading])
+  }, [fetchWithLoader])
 
   useEffect(() => {
     fetchBeams()

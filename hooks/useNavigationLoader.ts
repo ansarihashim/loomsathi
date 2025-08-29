@@ -13,7 +13,7 @@ interface UseNavigationLoaderOptions {
 export const useNavigationLoader = (options: UseNavigationLoaderOptions = {}) => {
   const {
     showOnNavigation = true,
-    showOnDataFetch = true,
+    showOnDataFetch = false,
     defaultMessage = 'Loading...'
   } = options
 

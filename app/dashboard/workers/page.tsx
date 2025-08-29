@@ -92,7 +92,7 @@ const WorkersPage = () => {
 
   const fetchWorkers = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
         }

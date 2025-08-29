@@ -90,7 +90,7 @@ const LoanDashboard = () => {
   const [error, setError] = useState('')
   const [paymentError, setPaymentError] = useState('')
   const { startLoading, stopLoading } = useApiLoaderContext()
-  const { navigateWithLoader } = useNavigationLoader({
+  const { navigateWithLoader, fetchWithLoader } = useNavigationLoader({
     showOnNavigation: true,
     defaultMessage: 'Loading...'
   })
@@ -100,34 +100,38 @@ const LoanDashboard = () => {
 
   const fetchLoans = useCallback(async () => {
     try {
-      startLoading('Fetching loan data...')
-      
-      const token = localStorage.getItem('loomsathi_token')
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/loans`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const result = await fetchWithLoader(async () => {
+        const token = localStorage.getItem('loomsathi_token')
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/loans`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Error response:', errorText)
+          throw new Error(`Failed to fetch loan data: ${response.status} ${response.statusText}`)
         }
-      })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error response:', errorText)
-        throw new Error(`Failed to fetch loan data: ${response.status} ${response.statusText}`)
-      }
-      
-      const data = await response.json()
-      setLoans(data.data || [])
-      setFilteredLoans(data.data || [])
+        return response.json()
+      }, 'Fetching loan data...')
+
+      const items = Array.isArray(result?.data)
+        ? result.data
+        : Array.isArray(result?.loans)
+        ? result.loans
+        : Array.isArray(result)
+        ? result
+        : []
+      setLoans(items)
+      setFilteredLoans(items)
     } catch (error: any) {
       console.error('Error fetching loans:', error)
       setError(`Failed to fetch loan data: ${error.message}`)
     } finally {
-      stopLoading()
       setIsLoading(false)
     }
-  }, [startLoading, stopLoading])
+  }, [fetchWithLoader])
 
   const fetchWorkers = useCallback(async () => {
     try {
@@ -460,7 +464,7 @@ const LoanDashboard = () => {
                   {filteredLoans.length > 0 ? (
                     filteredLoans.map((loan) => (
                       <motion.tr
-                        key={loan._id}
+                        key={loan._id || `${getWorkerName(loan)}-${String(loan.loan_date)}-${loan.createdAt}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="hover:bg-gray-50 transition-colors"
@@ -596,7 +600,7 @@ const LoanDashboard = () => {
                       >
                         <option value="">Select a worker</option>
                         {workers.map((worker) => (
-                          <option key={worker._id} value={worker._id}>
+                          <option key={worker._id || `${worker.name}-${worker.phone}`} value={worker._id}>
                             {worker.name}
                           </option>
                         ))}

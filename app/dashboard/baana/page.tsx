@@ -59,7 +59,7 @@ const BaanaDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const { startLoading, stopLoading } = useApiLoaderContext()
-  const { navigateWithLoader } = useNavigationLoader({
+  const { navigateWithLoader, fetchWithLoader } = useNavigationLoader({
     showOnNavigation: true,
     defaultMessage: 'Loading...'
   })
@@ -71,34 +71,38 @@ const BaanaDashboard = () => {
 
   const fetchBaanas = useCallback(async () => {
     try {
-      startLoading('Fetching baana data...')
-      
-      const token = localStorage.getItem('loomsathi_token')
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/baanas`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const result = await fetchWithLoader(async () => {
+        const token = localStorage.getItem('loomsathi_token')
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/baanas`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Error response:', errorText)
+          throw new Error(`Failed to fetch baana data: ${response.status} ${response.statusText}`)
         }
-      })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error response:', errorText)
-        throw new Error(`Failed to fetch baana data: ${response.status} ${response.statusText}`)
-      }
-      
-      const data = await response.json()
-      setBaanas(data.data || [])
-      setFilteredBaanas(data.data || [])
+        return response.json()
+      }, 'Fetching baana data...')
+
+      const items = Array.isArray(result?.data)
+        ? result.data
+        : Array.isArray(result?.baanas)
+        ? result.baanas
+        : Array.isArray(result)
+        ? result
+        : []
+      setBaanas(items)
+      setFilteredBaanas(items)
     } catch (error: any) {
       console.error('Error fetching baana:', error)
       setError(`Failed to fetch baana data: ${error.message}`)
     } finally {
-      stopLoading()
       setIsLoading(false)
     }
-  }, [startLoading, stopLoading])
+  }, [fetchWithLoader])
 
   useEffect(() => {
     fetchBaanas()
@@ -697,4 +701,4 @@ const BaanaDashboard = () => {
   )
 }
 
-export default BaanaDashboard 
+export default BaanaDashboard  

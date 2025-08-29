@@ -92,7 +92,7 @@ const ExpenseDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const { startLoading, stopLoading } = useApiLoaderContext()
-  const { navigateWithLoader } = useNavigationLoader({
+  const { navigateWithLoader, fetchWithLoader } = useNavigationLoader({
     showOnNavigation: true,
     defaultMessage: 'Loading...'
   })
@@ -102,39 +102,34 @@ const ExpenseDashboard = () => {
 
   const fetchExpenses = useCallback(async () => {
     try {
-      startLoading('Fetching expense data...')
-      
-      // Check if we're on the client side
-      if (typeof window === 'undefined') {
-        return
-      }
-      
-      const token = localStorage.getItem('loomsathi_token')
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const data = await fetchWithLoader(async () => {
+        if (typeof window === 'undefined') {
+          return { data: [] }
         }
-      })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error response:', errorText)
-        throw new Error(`Failed to fetch expense data: ${response.status} ${response.statusText}`)
-      }
-      
-      const data = await response.json()
+        const token = localStorage.getItem('loomsathi_token')
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Error response:', errorText)
+          throw new Error(`Failed to fetch expense data: ${response.status} ${response.statusText}`)
+        }
+        return response.json()
+      }, 'Fetching expense data...')
+
       setExpenses(data.data || [])
       setFilteredExpenses(data.data || [])
     } catch (error: any) {
       console.error('Error fetching expenses:', error)
       setError(`Failed to fetch expense data: ${error.message}`)
     } finally {
-      stopLoading()
       setIsLoading(false)
     }
-  }, [startLoading, stopLoading])
+  }, [fetchWithLoader])
 
   useEffect(() => {
     fetchExpenses()
