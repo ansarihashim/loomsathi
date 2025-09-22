@@ -225,6 +225,22 @@ const LoanDashboard = () => {
       return
     }
 
+    // Ensure we have a valid ISO date (YYYY-MM-DD)
+    let isoDate = formData.loan_date
+    if (!isoDate || isoDate.trim() === '') {
+      // Attempt to parse from rawLoanDate if provided in DD/MM/YYYY
+      if (rawLoanDate && rawLoanDate.length === 10 && rawLoanDate.includes('/')) {
+        const [dd, mm, yyyy] = rawLoanDate.split('/')
+        if (dd && mm && yyyy) {
+          isoDate = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`
+        }
+      }
+    }
+    if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+      setError('Please enter a valid loan date (DD/MM/YYYY).')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -234,24 +250,45 @@ const LoanDashboard = () => {
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/loans/${selectedLoan._id}`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/loans`
       
+      // Build payload: on create, omit worker_name and status (server can derive/default)
+      // Always include all likely-required fields for backend validation
+      const payload: any = {
+        worker_id: formData.worker_id,
+        worker_name: formData.worker_name || (workers.find(w => w._id === formData.worker_id)?.name ?? ''),
+        loan_amt: loanAmount,
+        loan_date: isoDate,
+        status: formData.status || 'active',
+      }
+
       const response = await fetch(url, {
         method: isUpdate ? 'PUT' : 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          worker_id: formData.worker_id,
-          worker_name: formData.worker_name,
-          loan_amt: loanAmount,
-          loan_date: formData.loan_date,
-          status: formData.status
-        })
+        body: JSON.stringify(payload)
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save loan')
+        // Try to parse server error body intelligently
+        let message = `Failed to save loan`
+        try {
+          const contentType = response.headers.get('content-type') || ''
+          if (contentType.includes('application/json')) {
+            const errorData = await response.json()
+            if (Array.isArray(errorData?.errors)) {
+              message = errorData.errors.join(', ')
+            } else {
+              message = errorData.error || errorData.message || message
+            }
+          } else {
+            const text = await response.text()
+            if (text) message = text
+          }
+        } catch (e) {
+          // ignore parse errors, keep default message
+        }
+        throw new Error(message)
       }
 
       await fetchLoans()
