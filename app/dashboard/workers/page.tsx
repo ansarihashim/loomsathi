@@ -68,7 +68,28 @@ const WorkersPage = () => {
     try {
       const result = await workerService.getAll()
       if (result && result.success) {
-        setWorkers((result.data as any[]) || [])
+        const raw = (result.data as any[]) || []
+        // Normalize and compute totals client-side if missing from backend
+        const normalized: Worker[] = raw.map((w: any) => {
+          const loan_history = Array.isArray(w.loan_history) ? w.loan_history : []
+          const installment_history = Array.isArray(w.installment_history) ? w.installment_history : []
+          const computedTotal = loan_history.reduce((sum: number, l: any) => sum + Number(l?.loan_amt || 0), 0)
+          const computedPaid = installment_history.reduce((sum: number, i: any) => sum + Number(i?.installment_amt || 0), 0)
+          const computedRemaining = Math.max(computedTotal - computedPaid, 0)
+
+          return {
+            // Start with raw worker fields
+            ...w,
+            // Normalize arrays
+            loan_history,
+            installment_history,
+            // Ensure totals are present; fallback to computed when missing/invalid
+            total_loan_amt: (typeof w.total_loan_amt === 'number' ? w.total_loan_amt : Number(w.total_loan_amt || 0)) || computedTotal,
+            paid_amt: (typeof w.paid_amt === 'number' ? w.paid_amt : Number(w.paid_amt || 0)) || computedPaid,
+            remaining_amt: (typeof w.remaining_amt === 'number' ? w.remaining_amt : Number(w.remaining_amt || 0)) || computedRemaining,
+          } as Worker
+        })
+        setWorkers(normalized)
       } else {
         console.error('Failed to fetch workers', result?.message || result?.error)
         setWorkers([])
@@ -121,11 +142,24 @@ const WorkersPage = () => {
   }
 
   const handleWorkerUpdate = (updatedWorker: Worker) => {
-    setWorkers(prevWorkers => 
-      prevWorkers.map(worker => 
-        worker._id === updatedWorker._id ? updatedWorker : worker
-      )
-    )
+    // Normalize updated worker totals to keep UI consistent
+    const normalizeOne = (w: any): Worker => {
+      const loan_history = Array.isArray(w.loan_history) ? w.loan_history : []
+      const installment_history = Array.isArray(w.installment_history) ? w.installment_history : []
+      const computedTotal = loan_history.reduce((sum: number, l: any) => sum + Number(l?.loan_amt || 0), 0)
+      const computedPaid = installment_history.reduce((sum: number, i: any) => sum + Number(i?.installment_amt || 0), 0)
+      const computedRemaining = Math.max(computedTotal - computedPaid, 0)
+      return {
+        ...w,
+        loan_history,
+        installment_history,
+        total_loan_amt: (typeof w.total_loan_amt === 'number' ? w.total_loan_amt : Number(w.total_loan_amt || 0)) || computedTotal,
+        paid_amt: (typeof w.paid_amt === 'number' ? w.paid_amt : Number(w.paid_amt || 0)) || computedPaid,
+        remaining_amt: (typeof w.remaining_amt === 'number' ? w.remaining_amt : Number(w.remaining_amt || 0)) || computedRemaining,
+      } as Worker
+    }
+    const normalized = normalizeOne(updatedWorker)
+    setWorkers(prevWorkers => prevWorkers.map(w => (w._id === normalized._id ? normalized : w)))
   }
 
   const handleWorkerAdded = (newWorker: Worker) => {
@@ -272,7 +306,7 @@ const WorkersPage = () => {
                   <div className="min-w-0 flex-1">
                     <p className="text-xs sm:text-sm font-medium text-yellow-600 truncate">Total Loans</p>
                     <p className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-900 group-hover:text-yellow-700 transition-colors truncate">
-                      {workers.reduce((sum, w) => sum + w.loan_history.length, 0)}
+                      {workers.reduce((sum, w) => sum + (w.loan_history?.length || 0), 0)}
                     </p>
                   </div>
                   <Building2 className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-600 flex-shrink-0" />

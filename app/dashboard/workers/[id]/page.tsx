@@ -45,7 +45,25 @@ const WorkerDetailPage = () => {
       const result = await workerService.getById(workerId)
       
       if (result.success) {
-        setWorker(result.data)
+        const w: any = result.data
+        const loan_history = Array.isArray(w?.loan_history) ? w.loan_history : []
+        const installment_history = Array.isArray(w?.installment_history) ? w.installment_history : []
+        const computedTotal = loan_history.reduce((sum: number, l: any) => sum + Number(l?.loan_amt || 0), 0)
+        const computedPaid = installment_history.reduce((sum: number, i: any) => sum + Number(i?.installment_amt || 0), 0)
+        const computedRemaining = Math.max(computedTotal - computedPaid, 0)
+
+        const normalized: Worker = {
+          // raw fields first
+          ...w,
+          // normalized arrays
+          loan_history,
+          installment_history,
+          // totals with computed fallbacks
+          total_loan_amt: (typeof w?.total_loan_amt === 'number' ? w.total_loan_amt : Number(w?.total_loan_amt || 0)) || computedTotal,
+          paid_amt: (typeof w?.paid_amt === 'number' ? w.paid_amt : Number(w?.paid_amt || 0)) || computedPaid,
+          remaining_amt: (typeof w?.remaining_amt === 'number' ? w.remaining_amt : Number(w?.remaining_amt || 0)) || computedRemaining,
+        }
+        setWorker(normalized)
       } else {
         setError('Worker not found')
       }
