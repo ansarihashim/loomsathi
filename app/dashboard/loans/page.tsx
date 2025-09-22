@@ -25,6 +25,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useApiLoaderContext } from '@/contexts/ApiLoaderContext'
 import { useNavigationLoader } from '@/hooks/useNavigationLoader'
 import { formatDate } from '@/utils/formatDate'
+import { workerService, type Worker as ApiWorker } from '@/lib/api'
 
 interface Loan {
   _id: string
@@ -42,22 +43,18 @@ interface Loan {
   updatedAt: string
 }
 
-interface Worker {
-  _id: string
-  name: string
-  phone: string
-}
+type Worker = Pick<ApiWorker, '_id' | 'name' | 'phone'>
 
 interface LoanFormData {
   worker_id: string
   worker_name: string
-  loan_amt: number
+  loan_amt: string
   loan_date: string
   status: 'active' | 'inactive' | 'paid'
 }
 
 interface PaymentFormData {
-  installment_amt: number
+  installment_amt: string
   installment_date: string
   notes: string
 }
@@ -76,12 +73,12 @@ const LoanDashboard = () => {
   const [formData, setFormData] = useState<LoanFormData>({
     worker_id: '',
     worker_name: '',
-    loan_amt: 0,
+    loan_amt: '',
     loan_date: '',
     status: 'active'
   })
   const [paymentFormData, setPaymentFormData] = useState<PaymentFormData>({
-    installment_amt: 0,
+    installment_amt: '',
     installment_date: new Date().toISOString().split('T')[0],
     notes: ''
   })
@@ -135,21 +132,9 @@ const LoanDashboard = () => {
 
   const fetchWorkers = useCallback(async () => {
     try {
-      const token = localStorage.getItem('loomsathi_token')
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch workers: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setWorkers(data.data || [])
+      const result = await workerService.getAll()
+      const items = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : []
+      setWorkers(items as Worker[])
     } catch (error: any) {
       console.error('Error fetching workers:', error)
     }
@@ -175,7 +160,7 @@ const LoanDashboard = () => {
     setFormData({
       worker_id: '',
       worker_name: '',
-      loan_amt: 0,
+      loan_amt: '',
       loan_date: '',
       status: 'active'
     })
@@ -186,11 +171,25 @@ const LoanDashboard = () => {
 
   const handleEdit = (loan: Loan) => {
     setSelectedLoan(loan)
+    
+    // Safe date handling for loan_date
+    let formattedLoanDate: string
+    if (!loan.loan_date) {
+      formattedLoanDate = new Date().toISOString().split('T')[0]
+    } else if (typeof loan.loan_date === 'string') {
+      formattedLoanDate = loan.loan_date
+    } else if (loan.loan_date instanceof Date) {
+      formattedLoanDate = loan.loan_date.toISOString().split('T')[0]
+    } else {
+      // Fallback for any other case
+      formattedLoanDate = new Date().toISOString().split('T')[0]
+    }
+    
     setFormData({
       worker_id: typeof loan.worker_id === 'object' ? loan.worker_id._id : loan.worker_id,
       worker_name: loan.worker_name,
-      loan_amt: loan.loan_amt,
-      loan_date: typeof loan.loan_date === 'string' ? loan.loan_date : loan.loan_date.toISOString().split('T')[0],
+      loan_amt: String(loan.loan_amt || ''),
+      loan_date: formattedLoanDate,
       status: loan.status
     })
     setRawLoanDate(formatDate(loan.loan_date))
@@ -207,8 +206,23 @@ const LoanDashboard = () => {
     e.preventDefault()
     setError('')
 
-    if (!formData.worker_id || !formData.loan_amt) {
+    // Enhanced validation with proper number parsing
+    if (!formData.worker_id || !formData.loan_amt || formData.loan_amt.trim() === '') {
       setError('Please fill in all required fields.')
+      return
+    }
+
+    // Parse loan amount and validate
+    const loanAmount = parseFloat(formData.loan_amt)
+    if (isNaN(loanAmount) || loanAmount <= 0) {
+      setError('Please enter a valid loan amount greater than 0.')
+      return
+    }
+
+    // Defensive check: Ensure we have a valid loan ID for updates
+    if (selectedLoan && !selectedLoan._id) {
+      console.error('Error: Selected loan exists but has no _id. This should not happen.')
+      setError('Invalid loan data. Please try again.')
       return
     }
 
@@ -216,23 +230,26 @@ const LoanDashboard = () => {
 
     try {
       const token = localStorage.getItem('loomsathi_token')
-      const url = selectedLoan 
+      
+      // Determine if this is an update (PUT) or create (POST) operation
+      const isUpdate = selectedLoan && selectedLoan._id
+      const url = isUpdate 
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/loans/${selectedLoan._id}`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/loans`
       
       const response = await fetch(url, {
-        method: selectedLoan ? 'PUT' : 'POST',
+        method: isUpdate ? 'PUT' : 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-                 body: JSON.stringify({
-           worker_id: formData.worker_id,
-           worker_name: formData.worker_name,
-           loan_amt: formData.loan_amt,
-           loan_date: formData.loan_date,
-           status: formData.status
-         })
+        body: JSON.stringify({
+          worker_id: formData.worker_id,
+          worker_name: formData.worker_name,
+          loan_amt: loanAmount,
+          loan_date: formData.loan_date,
+          status: formData.status
+        })
       })
 
       if (!response.ok) {
@@ -252,6 +269,13 @@ const LoanDashboard = () => {
 
   const confirmDelete = async () => {
     if (!selectedLoan) return
+
+    // Defensive check: Ensure we have a valid loan ID for deletion
+    if (!selectedLoan._id) {
+      console.error('Error: Selected loan has no _id. Cannot delete.')
+      setError('Invalid loan data. Cannot delete.')
+      return
+    }
 
     try {
       const token = localStorage.getItem('loomsathi_token')
@@ -301,7 +325,7 @@ const LoanDashboard = () => {
   const handlePayment = (loan: Loan) => {
     setSelectedLoan(loan)
     setPaymentFormData({
-      installment_amt: Math.min(loan.remaining_amount || 0, 1000), // Default to 1000 or remaining amount
+      installment_amt: String(Math.min(loan.remaining_amount || 0, 1000)), // Default to 1000 or remaining amount
       installment_date: new Date().toISOString().split('T')[0],
       notes: ''
     })
@@ -313,6 +337,18 @@ const LoanDashboard = () => {
     e.preventDefault()
     if (!selectedLoan) return
 
+    // Validate payment amount
+    if (!paymentFormData.installment_amt || paymentFormData.installment_amt.trim() === '') {
+      setPaymentError('Please enter a payment amount.')
+      return
+    }
+
+    const paymentAmount = parseFloat(paymentFormData.installment_amt)
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      setPaymentError('Please enter a valid payment amount greater than 0.')
+      return
+    }
+
     setIsPaymentSubmitting(true)
     setPaymentError('')
 
@@ -320,7 +356,7 @@ const LoanDashboard = () => {
       const token = localStorage.getItem('loomsathi_token')
       const paymentData = {
         worker_id: typeof selectedLoan.worker_id === 'object' ? selectedLoan.worker_id._id : selectedLoan.worker_id,
-        installment_amt: paymentFormData.installment_amt,
+        installment_amt: paymentAmount,
         installment_date: paymentFormData.installment_date,
         notes: paymentFormData.notes
       }
@@ -345,7 +381,7 @@ const LoanDashboard = () => {
         setIsPaymentModalOpen(false)
         setSelectedLoan(null)
         setPaymentFormData({
-          installment_amt: 0,
+          installment_amt: '',
           installment_date: new Date().toISOString().split('T')[0],
           notes: ''
         })
@@ -616,7 +652,7 @@ const LoanDashboard = () => {
                         required
                         min="1"
                         value={formData.loan_amt}
-                        onChange={(e) => setFormData(prev => ({ ...prev, loan_amt: parseInt(e.target.value) }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, loan_amt: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
@@ -872,7 +908,7 @@ const LoanDashboard = () => {
                          min="1"
                          max={selectedLoan?.remaining_amount || 0}
                          value={paymentFormData.installment_amt}
-                         onChange={(e) => handlePaymentInputChange('installment_amt', Number(e.target.value))}
+                         onChange={(e) => handlePaymentInputChange('installment_amt', e.target.value)}
                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                          placeholder="Enter payment amount"
                        />
@@ -925,7 +961,7 @@ const LoanDashboard = () => {
                      </button>
                      <button
                        type="submit"
-                       disabled={isPaymentSubmitting || paymentFormData.installment_amt <= 0}
+                       disabled={isPaymentSubmitting || !paymentFormData.installment_amt || paymentFormData.installment_amt.trim() === ''}
                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                      >
                        {isPaymentSubmitting ? (

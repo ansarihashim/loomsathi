@@ -27,33 +27,7 @@ import AuthGuard from '@/components/auth/AuthGuard'
 import EditWorkerModal from '@/components/modals/EditWorkerModal'
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal'
 import { formatDate } from '@/utils/formatDate'
-
-interface Worker {
-  _id: string
-  name: string
-  phone: string
-  email: string
-  address: string
-  designation: string
-  status: 'active' | 'inactive'
-  join_date: string
-  leave_date?: string
-  loan_history: Array<{
-    loan_id: any
-    loan_amt: number
-    loan_date: string
-  }>
-  installment_history: Array<{
-    installment_id: any
-    installment_amt: number
-    installment_date: string
-  }>
-  total_loan_amt: number
-  paid_amt: number
-  remaining_amt: number
-  createdAt: string
-  updatedAt: string
-}
+import { workerService, type Worker } from '@/lib/api'
 
 const WorkerDetailPage = () => {
   const router = useRouter()
@@ -68,17 +42,10 @@ const WorkerDetailPage = () => {
 
   const fetchWorkerDetails = useCallback(async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/${workerId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        // Handle both response formats: { success: true, data: worker } and direct worker object
-        const workerData = data.data || data.worker || data
-        setWorker(workerData)
+      const result = await workerService.getById(workerId)
+      
+      if (result.success) {
+        setWorker(result.data)
       } else {
         setError('Worker not found')
       }
@@ -123,14 +90,9 @@ const WorkerDetailPage = () => {
 
   const handleWorkerDelete = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/${workerId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-        }
-      })
+      const result = await workerService.delete(workerId)
 
-      if (response.ok) {
+      if (result?.success) {
         // Show success feedback and delay redirect for smooth animation
         setTimeout(() => {
           router.push('/dashboard/workers')

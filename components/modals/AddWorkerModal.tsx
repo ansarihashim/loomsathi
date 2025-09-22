@@ -11,35 +11,10 @@ import {
   Calendar,
   Save,
   AlertCircle,
-  Plus
+  Plus,
+  DollarSign
 } from 'lucide-react'
-
-interface Worker {
-  _id: string
-  name: string
-  phone: string
-  email: string
-  address: string
-  designation: string
-  status: 'active' | 'inactive'
-  join_date: string
-  leave_date?: string
-  loan_history: Array<{
-    loan_id: any
-    loan_amt: number
-    loan_date: string
-  }>
-  installment_history: Array<{
-    installment_id: any
-    installment_amt: number
-    installment_date: string
-  }>
-  total_loan_amt: number
-  paid_amt: number
-  remaining_amt: number
-  createdAt: string
-  updatedAt: string
-}
+import { workerService, type WorkerCreateData, type Worker } from '@/lib/api'
 
 interface AddWorkerModalProps {
   isOpen: boolean
@@ -103,6 +78,7 @@ const AddWorkerModal = ({ isOpen, onClose, onWorkerAdded }: AddWorkerModalProps)
     address: '',
     designation: 'weaver',
     status: 'active' as 'active' | 'inactive',
+    salary: '', // Add salary field
     join_date: '',
     leave_date: ''
   })
@@ -141,6 +117,7 @@ const AddWorkerModal = ({ isOpen, onClose, onWorkerAdded }: AddWorkerModalProps)
         address: '',
         designation: 'weaver',
         status: 'active',
+        salary: '',
         join_date: '',
         leave_date: ''
       })
@@ -192,6 +169,10 @@ const AddWorkerModal = ({ isOpen, onClose, onWorkerAdded }: AddWorkerModalProps)
       errors.email = 'Please enter a valid email address'
     }
     
+    if (!formData.salary || parseFloat(formData.salary) <= 0) {
+      errors.salary = 'Salary is required and must be greater than 0'
+    }
+    
     if (!formData.join_date) {
       errors.join_date = 'Join date is required'
     } else if (!isValidDateFormat(formData.join_date)) {
@@ -226,31 +207,24 @@ const AddWorkerModal = ({ isOpen, onClose, onWorkerAdded }: AddWorkerModalProps)
     setError('')
     setSuccess('')
 
-    // Prepare data for backend
-    const workerData = {
+    // Prepare data for backend - include salary
+    const workerData: WorkerCreateData = {
       name: formData.name.trim(),
       phone: formData.phone.trim(),
       email: formData.email.trim() || undefined,
       address: formData.address.trim() || undefined,
-      designation: formData.designation,
-      status: formData.status,
+      designation: formData.designation as 'weaver' | 'repairer' | 'other',
+      salary: parseFloat(formData.salary) || 0, // Add salary field
       join_date: formatDateForBackend(formData.join_date),
       leave_date: formData.leave_date ? formatDateForBackend(formData.leave_date) : undefined
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-        },
-        body: JSON.stringify(workerData)
-      })
+      // Use the new worker service with cookie authentication
+      const result = await workerService.create(workerData)
 
-      if (response.ok) {
-        const result = await response.json()
-        const newWorker = result.data || result
+      if (result?.success && result?.data) {
+        const newWorker = result.data
         onWorkerAdded(newWorker)
         setSuccess('Worker added successfully!')
         
@@ -259,13 +233,13 @@ const AddWorkerModal = ({ isOpen, onClose, onWorkerAdded }: AddWorkerModalProps)
           onClose()
         }, 1500)
       } else {
-        const errorData = await response.json()
-        console.error('Create error:', errorData)
-        setError(errorData.message || errorData.error || errorData.errors?.join(', ') || 'Failed to create worker')
+        const errorMessage = result?.error || result?.message || 'Failed to create worker'
+        console.error('Create error:', result)
+        setError(errorMessage)
       }
     } catch (error) {
       console.error('Network error:', error)
-      setError('Network error. Please try again.')
+      setError('Network error. Please check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
@@ -535,6 +509,32 @@ const AddWorkerModal = ({ isOpen, onClose, onWorkerAdded }: AddWorkerModalProps)
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Salary */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Monthly Salary (₹) *
+                </label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="number"
+                    name="salary"
+                    value={formData.salary}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="1"
+                    className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-textile-500 focus:border-transparent ${
+                      validationErrors.salary ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter monthly salary"
+                  />
+                </div>
+                {validationErrors.salary && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.salary}</p>
+                )}
               </div>
 
               {/* Join Date */}

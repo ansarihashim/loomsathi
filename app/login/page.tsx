@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Eye, EyeOff, Loader2, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { authService } from '@/lib/api'
 
 interface FormData {
   email: string

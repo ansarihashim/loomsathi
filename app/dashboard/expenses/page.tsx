@@ -167,12 +167,26 @@ const ExpenseDashboard = () => {
 
   const handleEdit = (expense: Expense) => {
     setSelectedExpense(expense)
+    
+    // Safe date handling for expense_date
+    let formattedExpenseDate: string
+    if (!expense.expense_date) {
+      formattedExpenseDate = new Date().toISOString().split('T')[0]
+    } else if (typeof expense.expense_date === 'string') {
+      formattedExpenseDate = expense.expense_date
+    } else if (expense.expense_date instanceof Date) {
+      formattedExpenseDate = expense.expense_date.toISOString().split('T')[0]
+    } else {
+      // Fallback for any other case
+      formattedExpenseDate = new Date().toISOString().split('T')[0]
+    }
+    
     setFormData({
       title: expense.title,
       amount: expense.amount,
       category: expense.category,
       description: expense.description,
-      expense_date: typeof expense.expense_date === 'string' ? expense.expense_date : expense.expense_date.toISOString().split('T')[0]
+      expense_date: formattedExpenseDate
     })
     setRawExpenseDate(formatDate(expense.expense_date))
     setError('')
@@ -204,16 +218,26 @@ const ExpenseDashboard = () => {
       return
     }
 
+    // Defensive check: Ensure we have a valid expense ID for updates
+    if (selectedExpense && !selectedExpense._id) {
+      console.error('Error: Selected expense exists but has no _id. This should not happen.')
+      setError('Invalid expense data. Please try again.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       const token = localStorage.getItem('loomsathi_token')
-      const url = selectedExpense 
+      
+      // Determine if this is an update (PUT) or create (POST) operation
+      const isUpdate = selectedExpense && selectedExpense._id
+      const url = isUpdate 
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses/${selectedExpense._id}`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses`
       
       const response = await fetch(url, {
-        method: selectedExpense ? 'PUT' : 'POST',
+        method: isUpdate ? 'PUT' : 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -244,6 +268,13 @@ const ExpenseDashboard = () => {
 
   const confirmDelete = async () => {
     if (!selectedExpense) return
+
+    // Defensive check: Ensure we have a valid expense ID for deletion
+    if (!selectedExpense._id) {
+      console.error('Error: Selected expense has no _id. Cannot delete.')
+      setError('Invalid expense data. Cannot delete.')
+      return
+    }
 
     try {
       const token = localStorage.getItem('loomsathi_token')

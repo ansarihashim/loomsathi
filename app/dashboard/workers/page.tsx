@@ -34,33 +34,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import DataFetchingAnimation from '@/components/ui/DataFetchingAnimation'
 import { useApiLoaderContext } from '@/contexts/ApiLoaderContext'
 import { formatDate } from '@/utils/formatDate'
-
-interface Worker {
-  _id: string
-  name: string
-  phone: string
-  email: string
-  address: string
-  designation: string
-  status: 'active' | 'inactive'
-  join_date: string
-  leave_date?: string
-  loan_history: Array<{
-    loan_id: any
-    loan_amt: number
-    loan_date: string
-  }>
-  installment_history: Array<{
-    installment_id: any
-    installment_amt: number
-    installment_date: string
-  }>
-  total_loan_amt: number
-  paid_amt: number
-  remaining_amt: number
-  createdAt: string
-  updatedAt: string
-}
+import { workerService, type Worker } from '@/lib/api'
 
 const WorkersPage = () => {
   const router = useRouter()
@@ -92,17 +66,10 @@ const WorkersPage = () => {
 
   const fetchWorkers = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        // Handle both response formats: { success: true, data: workers } and direct workers array
-        const workersData = data.data || data.workers || data
-        setWorkers(Array.isArray(workersData) ? workersData : [])
+      const result = await workerService.getAll()
+      
+      if (result.success) {
+        setWorkers(result.data || [])
       } else {
         console.error('Failed to fetch workers')
         setWorkers([])
@@ -118,7 +85,7 @@ const WorkersPage = () => {
   const filteredWorkers = workers.filter(worker => {
     const matchesSearch = worker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          worker.phone.includes(searchTerm) ||
-                         worker.email.toLowerCase().includes(searchTerm.toLowerCase())
+                         (worker.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     const matchesStatus = statusFilter === 'all' || worker.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -170,14 +137,9 @@ const WorkersPage = () => {
     if (!selectedWorker) return
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/workers/${selectedWorker._id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-        }
-      })
-
-      if (response.ok) {
+      const result = await workerService.delete(selectedWorker._id)
+      
+      if (result.success) {
         // Remove the worker from the list
         setWorkers(prevWorkers => 
           prevWorkers.filter(worker => worker._id !== selectedWorker._id)
@@ -573,12 +535,13 @@ const WorkersPage = () => {
                   }
                 </p>
                 {!searchTerm && statusFilter === 'all' && (
-                  <Link href="/dashboard/workers/add">
-                    <button className="mt-4 bg-textile-500 hover:bg-textile-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
-                      <Plus className="w-4 h-4 inline mr-2" />
-                      Add First Worker
-                    </button>
-                  </Link>
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="mt-4 bg-textile-500 hover:bg-textile-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  >
+                    <Plus className="w-4 h-4 inline mr-2" />
+                    Add First Worker
+                  </button>
                 )}
               </div>
             )}
