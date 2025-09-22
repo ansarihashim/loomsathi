@@ -106,10 +106,9 @@ const ExpenseDashboard = () => {
         if (typeof window === 'undefined') {
           return { data: [] }
         }
-        const token = localStorage.getItem('loomsathi_token')
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses`, {
+          credentials: 'include',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })
@@ -228,8 +227,6 @@ const ExpenseDashboard = () => {
     setIsSubmitting(true)
 
     try {
-      const token = localStorage.getItem('loomsathi_token')
-      
       // Determine if this is an update (PUT) or create (POST) operation
       const isUpdate = selectedExpense && selectedExpense._id
       const url = isUpdate 
@@ -238,8 +235,8 @@ const ExpenseDashboard = () => {
       
       const response = await fetch(url, {
         method: isUpdate ? 'PUT' : 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -277,12 +274,10 @@ const ExpenseDashboard = () => {
     }
 
     try {
-      const token = localStorage.getItem('loomsathi_token')
-      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses/${selectedExpense._id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -311,11 +306,9 @@ const ExpenseDashboard = () => {
     try {
       startLoading('Cleaning up invalid expenses...')
       
-      const token = localStorage.getItem('loomsathi_token')
-      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/expenses/cleanup`, {
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })

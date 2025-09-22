@@ -72,10 +72,9 @@ const BaanaDashboard = () => {
   const fetchBaanas = useCallback(async () => {
     try {
       const result = await fetchWithLoader(async () => {
-        const token = localStorage.getItem('loomsathi_token')
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/baanas`, {
+          credentials: 'include',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })
@@ -175,9 +174,9 @@ const BaanaDashboard = () => {
       
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       })
@@ -216,8 +215,9 @@ const BaanaDashboard = () => {
       startLoading('Deleting baana...')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/baanas/${selectedBaana._id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
+          'Content-Type': 'application/json'
         }
       })
 

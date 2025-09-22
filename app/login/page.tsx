@@ -88,7 +88,7 @@ const LoginPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        // Remove credentials: 'include' for mobile compatibility
+        credentials: 'include', // ensure Set-Cookie is stored
         body: JSON.stringify({
           email: formData.email,
           password: formData.password
@@ -105,17 +105,11 @@ const LoginPage = () => {
       console.log('Response data:', data)
 
       if (response.ok) {
-        // Store JWT token and user data
-        if (data.token) {
-          localStorage.setItem('loomsathi_token', data.token)
-          localStorage.setItem('loomsathi_user', JSON.stringify(data.user))
-          console.log('Token stored successfully')
-        }
-        
+        // With cookie sessions, no need to store token
         setShowSuccess(true)
         setTimeout(() => {
-          router.push('/dashboard') // Redirect to dashboard
-        }, 2000)
+          router.push('/dashboard')
+        }, 800)
       } else {
         const errorMessage = data.error || data.message || 'Login failed. Please try again.'
         console.error('Login failed:', errorMessage)

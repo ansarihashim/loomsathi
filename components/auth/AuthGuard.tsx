@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { authService } from '@/lib/api'
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -14,33 +15,15 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('loomsathi_token')
-      
-      if (!token) {
-        router.push('/login')
-        return
-      }
-
       try {
-        // Verify token with backend
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-
-        if (response.ok) {
+        const res = await authService.checkAuth()
+        if (res?.success) {
           setIsAuthenticated(true)
         } else {
-          // Token is invalid, clear storage and redirect
-          localStorage.removeItem('loomsathi_token')
-          localStorage.removeItem('loomsathi_user')
           router.push('/login')
         }
       } catch (error) {
         console.error('Auth check failed:', error)
-        localStorage.removeItem('loomsathi_token')
-        localStorage.removeItem('loomsathi_user')
         router.push('/login')
       } finally {
         setIsLoading(false)

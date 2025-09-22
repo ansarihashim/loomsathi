@@ -98,10 +98,9 @@ const LoanDashboard = () => {
   const fetchLoans = useCallback(async () => {
     try {
       const result = await fetchWithLoader(async () => {
-        const token = localStorage.getItem('loomsathi_token')
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/loans`, {
+          credentials: 'include',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })
@@ -229,8 +228,6 @@ const LoanDashboard = () => {
     setIsSubmitting(true)
 
     try {
-      const token = localStorage.getItem('loomsathi_token')
-      
       // Determine if this is an update (PUT) or create (POST) operation
       const isUpdate = selectedLoan && selectedLoan._id
       const url = isUpdate 
@@ -239,8 +236,8 @@ const LoanDashboard = () => {
       
       const response = await fetch(url, {
         method: isUpdate ? 'PUT' : 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -278,12 +275,10 @@ const LoanDashboard = () => {
     }
 
     try {
-      const token = localStorage.getItem('loomsathi_token')
-      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/loans/${selectedLoan._id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -353,7 +348,6 @@ const LoanDashboard = () => {
     setPaymentError('')
 
     try {
-      const token = localStorage.getItem('loomsathi_token')
       const paymentData = {
         worker_id: typeof selectedLoan.worker_id === 'object' ? selectedLoan.worker_id._id : selectedLoan.worker_id,
         installment_amt: paymentAmount,
@@ -365,9 +359,9 @@ const LoanDashboard = () => {
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/installments`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(paymentData)
       })

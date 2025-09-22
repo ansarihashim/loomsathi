@@ -72,10 +72,9 @@ const BeamDashboard = () => {
   const fetchBeams = useCallback(async () => {
     try {
       const data = await fetchWithLoader(async () => {
-        const token = localStorage.getItem('loomsathi_token')
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/beams`, {
+          credentials: 'include',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })
@@ -168,9 +167,9 @@ const BeamDashboard = () => {
       
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       })
@@ -209,8 +208,9 @@ const BeamDashboard = () => {
       startLoading('Deleting beam...')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/beams/${selectedBeam._id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
+          'Content-Type': 'application/json'
         }
       })
 

@@ -67,11 +67,10 @@ const WorkersPage = () => {
   const fetchWorkers = async () => {
     try {
       const result = await workerService.getAll()
-      
-      if (result.success) {
-        setWorkers(result.data || [])
+      if (result && result.success) {
+        setWorkers((result.data as any[]) || [])
       } else {
-        console.error('Failed to fetch workers')
+        console.error('Failed to fetch workers', result?.message || result?.error)
         setWorkers([])
       }
     } catch (error) {

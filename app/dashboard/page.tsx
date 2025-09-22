@@ -133,14 +133,7 @@ const Dashboard = () => {
   }, [isSidebarOpen])
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('loomsathi_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
-
-    // Fetch dashboard data
+    // Fetch dashboard data (cookie-based session)
     fetchDashboardData()
   }, [router])
 
@@ -155,24 +148,20 @@ const Dashboard = () => {
       // Fetch stats and activities with loading indicators
       const [statsData, activitiesData, beamActivitiesData, baanaActivitiesData] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/stats`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-          }
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
         }).then(res => res.ok ? res.json() : null),
         fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/activities`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-          }
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
         }).then(res => res.ok ? res.json() : null),
         fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/recent-beam`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-          }
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
         }).then(res => res.ok ? res.json() : null),
         fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard/recent-baana`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('loomsathi_token')}`
-          }
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
         }).then(res => res.ok ? res.json() : null)
       ])
 

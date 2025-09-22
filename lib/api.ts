@@ -17,32 +17,73 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   // Handle 401 globally
   if (response.status === 401) {
     window.location.href = '/login';
-    return;
+    return undefined;
   }
 
   return response;
+};
+
+// Normalized API result shape used across services
+export type ApiResult<T> = {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  status?: number;
+};
+
+// Helper to parse fetch Response into a normalized ApiResult
+const toApiResult = async <T>(response?: Response): Promise<ApiResult<T>> => {
+  if (!response) {
+    return { success: false, message: 'Unauthorized or network error', status: 401 };
+  }
+
+  let json: any = null;
+  try {
+    json = await response.json();
+  } catch (_) {
+    json = null;
+  }
+
+  if (!response.ok) {
+    const msg = (json && (json.message || json.error)) || `${response.status} ${response.statusText}`;
+    return { success: false, message: msg, error: msg, status: response.status };
+  }
+
+  if (json && typeof json === 'object') {
+    if (typeof json.success === 'boolean') {
+      return { success: json.success, data: json.data as T, message: json.message, error: json.error, status: response.status };
+    }
+    if ('data' in json) {
+      return { success: true, data: (json as any).data as T, status: response.status };
+    }
+  }
+  if (Array.isArray(json)) {
+    return { success: true, data: json as T, status: response.status };
+  }
+  return { success: true, data: json as T, status: response.status };
 };
 
 // Worker service - matches backend endpoints exactly
 export const workerService = {
   getAll: async () => {
     const response = await apiRequest('/workers');
-    return response?.json();
+    return toApiResult<Worker[] | any>(response);
   },
   
   getActive: async () => {
     const response = await apiRequest('/workers/active');
-    return response?.json();
+    return toApiResult<Worker[] | any>(response);
   },
   
   getInactive: async () => {
     const response = await apiRequest('/workers/inactive');
-    return response?.json();
+    return toApiResult<Worker[] | any>(response);
   },
   
   getById: async (id: string) => {
     const response = await apiRequest(`/workers/${id}`);
-    return response?.json();
+    return toApiResult<Worker | any>(response);
   },
   
   create: async (data: WorkerCreateData) => {
@@ -50,13 +91,13 @@ export const workerService = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return response?.json();
+    return toApiResult<Worker | any>(response);
   },
   
   // Get workers leaving on a specific date (YYYY-MM-DD)
   getLeaving: async (date: string) => {
     const response = await apiRequest(`/workers/leaving/${date}`);
-    return response?.json();
+    return toApiResult<Worker[] | any>(response);
   },
   
   update: async (id: string, data: WorkerUpdateData) => {
@@ -64,14 +105,14 @@ export const workerService = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    return response?.json();
+    return toApiResult<Worker | any>(response);
   },
   
   delete: async (id: string) => {
     const response = await apiRequest(`/workers/${id}`, {
       method: 'DELETE',
     });
-    return response?.json();
+    return toApiResult<unknown>(response);
   }
 };
 
